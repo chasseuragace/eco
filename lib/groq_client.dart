@@ -180,7 +180,7 @@ class GroqClient {
         
         // Add current prompt
         messages.add({'role': 'user', 'content': prompt});
-
+print("using model $currentModel");
         final response = await httpClient.post(
           Uri.parse('https://api.groq.com/openai/v1/chat/completions'),
           headers: {

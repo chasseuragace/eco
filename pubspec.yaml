@@ -1,6 +1,8 @@
 name: shared_ecosystem
-description: Shared utilities and frameworks for the development ecosystem
+description: Unified AI client library with automatic fallback between Groq and Gemini providers
 version: 1.0.0
+homepage: https://github.com/yourusername/shared_ecosystem
+repository: https://github.com/yourusername/shared_ecosystem
 
 environment:
   sdk: '>=3.0.0 <4.0.0'

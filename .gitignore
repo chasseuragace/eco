@@ -1,0 +1,69 @@
+# Dart & Flutter
+.dart_tool/
+.packages
+build/
+.flutter-plugins
+.flutter-plugins-dependencies
+
+# IDE & Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Logs and temporary files
+*.log
+*.tmp
+*.temp
+
+# Dependencies
+pubspec.lock
+
+# Test coverage
+coverage/
+
+# Build outputs
+*.js
+*.js.deps
+*.js.map
+
+# API Keys and Secrets
+.env
+.env.local
+.env.*.local
+.env.production
+.env.development
+.env.test
+*.key
+*.pem
+*.p12
+*.keystore
+secrets.json
+config/secrets.yaml
+config/keys.yaml
+
+# API Key files (common patterns)
+*api_key*
+*apikey*
+*secret*
+*token*
+keys/
+secrets/
+
+# Example dependencies
+example/.dart_tool/
+example/.packages
+example/pubspec.lock
+
+# Gamifier generated content (appears to be development artifacts)
+gamifier/
