@@ -76,11 +76,9 @@ class GeminiClient {
             return parts[0]['text'] as String?;
           }
         }
-      } else {
-        print('❌ Gemini API Error: ${response.statusCode} - ${response.body}');
       }
     } catch (e) {
-      print('❌ Gemini Exception: $e');
+      // Silent error handling
     }
     
     return null;
@@ -116,11 +114,9 @@ class GeminiClient {
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         return _convertGeminiResponseToOpenAIFormat(data);
-      } else {
-        print('❌ Gemini API Error: ${response.statusCode} - ${response.body}');
       }
     } catch (e) {
-      print('❌ Gemini Exception: $e');
+      // Silent error handling
     }
     
     return null;

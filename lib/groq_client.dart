@@ -8,7 +8,6 @@
 /// - Configurable temperature and max tokens
 
 import 'dart:convert';
-import 'dart:io';
 import 'package:http/http.dart' as http;
 
 class GroqClient {
@@ -54,7 +53,6 @@ class GroqClient {
     
     for (int retryCount = 0; retryCount < maxRetries; retryCount++) {
       final selectedModel = currentModel;
-      print('🤖 Using GROQ model: $selectedModel (attempt ${retryCount + 1}/$maxRetries)');
       
       try {
         final messages = <Map<String, dynamic>>[
@@ -88,24 +86,19 @@ class GroqClient {
         if (response.statusCode == 200) {
           final data = jsonDecode(response.body);
           final content = data['choices'][0]['message']['content'];
-          print('✅ GROQ completion successful with $selectedModel');
           return content;
         } else if (response.statusCode == 429) {
           final waitTime = 3 + ((retryCount + 1) * 2);
-          print('⏳ Rate limit hit, waiting ${waitTime}s before retry');
           await Future.delayed(Duration(seconds: waitTime));
           continue;
         } else {
-          print('❌ GROQ API Error: ${response.statusCode} - ${response.body}');
           throw GroqException('API error: ${response.statusCode}', response.body);
         }
       } catch (e) {
         if (retryCount < maxRetries - 1) {
-          print('🔄 Retrying GROQ request: $e');
           await Future.delayed(Duration(seconds: 2));
           continue;
         } else {
-          print('❌ GROQ request failed after $maxRetries attempts: $e');
           rethrow;
         }
       }
@@ -145,8 +138,6 @@ class GroqClient {
       
       return jsonDecode(jsonStr) as Map<String, dynamic>;
     } catch (e) {
-      print('❌ Failed to parse JSON response: $e');
-      print('Raw response: $completion');
       return null;
     }
   }
@@ -180,7 +171,7 @@ class GroqClient {
         
         // Add current prompt
         messages.add({'role': 'user', 'content': prompt});
-print("using model $currentModel");
+
         final response = await httpClient.post(
           Uri.parse('https://api.groq.com/openai/v1/chat/completions'),
           headers: {

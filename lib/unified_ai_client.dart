@@ -81,7 +81,6 @@ class UnifiedAIClient {
     // Try Groq first if available and preferred
     if (preferGroq && groqClient != null) {
       try {
-        print('🚀 Attempting Groq completion...');
         final result = await groqClient!.generateCompletion(
           prompt,
           systemPrompt: systemPrompt,
@@ -92,19 +91,16 @@ class UnifiedAIClient {
         );
         
         if (result != null) {
-          print('✅ Groq completion successful');
           return result;
         }
       } catch (e) {
-        print('❌ Groq failed: $e');
-        print('🔄 Falling back to Gemini...');
+        // Fall back to Gemini
       }
     }
 
     // Fallback to Gemini
     if (geminiClient != null) {
       try {
-        print('🌟 Attempting Gemini completion...');
         final result = await geminiClient!.generateCompletion(
           prompt,
           systemPrompt: systemPrompt,
@@ -113,18 +109,16 @@ class UnifiedAIClient {
         );
         
         if (result != null) {
-          print('✅ Gemini completion successful');
           return result;
         }
       } catch (e) {
-        print('❌ Gemini also failed: $e');
+        // Silent error handling
       }
     }
 
     // If Groq wasn't preferred or available, try it as last resort
     if (!preferGroq && groqClient != null) {
       try {
-        print('🔄 Last resort: Attempting Groq...');
         final result = await groqClient!.generateCompletion(
           prompt,
           systemPrompt: systemPrompt,
@@ -135,15 +129,13 @@ class UnifiedAIClient {
         );
         
         if (result != null) {
-          print('✅ Groq completion successful (fallback)');
           return result;
         }
       } catch (e) {
-        print('❌ Final Groq attempt failed: $e');
+        // Silent error handling
       }
     }
 
-    print('💥 All AI services failed');
     return null;
   }
 
@@ -157,7 +149,6 @@ class UnifiedAIClient {
     // Try Groq first if available and preferred
     if (preferGroq && groqClient != null) {
       try {
-        print('🚀 Attempting Groq JSON completion...');
         final result = await groqClient!.generateJsonCompletion(
           prompt,
           systemPrompt: systemPrompt,
@@ -166,19 +157,16 @@ class UnifiedAIClient {
         );
         
         if (result != null) {
-          print('✅ Groq JSON completion successful');
           return result;
         }
       } catch (e) {
-        print('❌ Groq JSON failed: $e');
-        print('🔄 Falling back to Gemini for JSON...');
+        // Fall back to Gemini
       }
     }
 
     // Fallback to Gemini with JSON parsing
     if (geminiClient != null) {
       try {
-        print('🌟 Attempting Gemini JSON completion...');
         final jsonSystemPrompt = (systemPrompt ?? '') + 
             '\n\nIMPORTANT: Always respond with valid JSON only. Do not include markdown formatting or explanations.';
         
@@ -201,18 +189,16 @@ class UnifiedAIClient {
             }
             
             final result = jsonDecode(jsonStr) as Map<String, dynamic>;
-            print('✅ Gemini JSON completion successful');
             return result;
           } catch (e) {
-            print('❌ Failed to parse Gemini JSON response: $e');
+            // Failed to parse JSON
           }
         }
       } catch (e) {
-        print('❌ Gemini JSON also failed: $e');
+        // Silent error handling
       }
     }
 
-    print('💥 All AI services failed for JSON completion');
     return null;
   }
 
@@ -227,7 +213,6 @@ class UnifiedAIClient {
     // Try Groq first if available and preferred
     if (preferGroq && groqClient != null) {
       try {
-        print('🚀 Attempting Groq with history...');
         final result = await groqClient!.generateWithHistory(
           prompt,
           conversationHistory,
@@ -237,20 +222,16 @@ class UnifiedAIClient {
         );
         
         if (result != null) {
-          print('✅ Groq history completion successful');
           return result;
         }
       } catch (e) {
-        print('❌ Groq history failed: $e');
-        print('🔄 Falling back to Gemini for history...');
+        // Fall back to Gemini
       }
     }
 
     // Fallback to Gemini (convert history to single prompt)
     if (geminiClient != null) {
       try {
-        print('🌟 Attempting Gemini with converted history...');
-        
         // Convert conversation history to a single prompt
         final historyPrompt = StringBuffer();
         if (systemPrompt != null) {
@@ -271,15 +252,13 @@ class UnifiedAIClient {
         );
         
         if (result != null) {
-          print('✅ Gemini history completion successful');
           return result;
         }
       } catch (e) {
-        print('❌ Gemini history also failed: $e');
+        // Silent error handling
       }
     }
 
-    print('💥 All AI services failed for history completion');
     return null;
   }
 
@@ -296,15 +275,12 @@ class UnifiedAIClient {
     // Try Groq first if available and preferred
     if (preferGroq && groqClient != null) {
       try {
-        print('🚀 Attempting Groq with tools...');
         final result = await _tryGroqWithTools(messages, tools, temperature, maxTokens);
         if (result['success'] == true) {
-          print('✅ Groq tools completion successful');
           return result;
         }
       } catch (e) {
-        print('❌ Groq tools failed: $e');
-        print('🔄 Falling back to Gemini for tools...');
+        // Fall back to Gemini
       }
     }
 
@@ -316,18 +292,15 @@ class UnifiedAIClient {
     // If Groq wasn't preferred, try it as last resort
     if (!preferGroq && groqClient != null) {
       try {
-        print('🔄 Last resort: Attempting Groq with tools...');
         final result = await _tryGroqWithTools(messages, tools, temperature, maxTokens);
         if (result['success'] == true) {
-          print('✅ Groq tools completion successful (fallback)');
           return result;
         }
       } catch (e) {
-        print('❌ Final Groq tools attempt failed: $e');
+        // Silent error handling
       }
     }
 
-    print('💥 All AI services failed for tools');
     return {'needsTools': false, 'response': '', 'success': false, 'error': 'All LLM providers failed'};
   }
 
@@ -378,12 +351,10 @@ class UnifiedAIClient {
     int maxTokens,
   ) async {
     if (geminiClient == null) {
-      print('❌ Gemini client not available');
       return {'needsTools': false, 'response': '', 'success': false, 'error': 'Gemini client not available'};
     }
 
     try {
-      print('🌟 Attempting Gemini with tools...');
       final geminiResponse = await geminiClient!.generateCompletionWithTools(
         messages, 
         tools,
@@ -392,14 +363,11 @@ class UnifiedAIClient {
       );
 
       if (geminiResponse != null) {
-        print('✅ Gemini tools completion successful');
         return _processToolResponse(geminiResponse, success: true);
       } else {
-        print('❌ Gemini returned null');
         return {'needsTools': false, 'response': '', 'success': false, 'error': 'Gemini returned null'};
       }
     } catch (e) {
-      print('❌ Gemini tools exception: $e');
       return {'needsTools': false, 'response': '', 'success': false, 'error': 'Gemini exception: $e'};
     }
   }
@@ -461,8 +429,6 @@ class UnifiedAIClient {
   void setPreference({required bool preferGroq}) {
     // Note: This would require making preferGroq non-final
     // For now, create a new instance if you need different preferences
-    print('Current preference: ${this.preferGroq ? "Groq" : "Gemini"}');
-    print('To change preference, create a new UnifiedAIClient instance');
   }
 
   void dispose() {
