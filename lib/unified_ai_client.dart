@@ -265,10 +265,10 @@ class UnifiedAIClient {
   /// Call LLM with tools support and automatic fallback
   /// Returns a map compatible with the existing codebase pattern
   Future<Map<String, dynamic>> callLLMWithTools(
-    List<Map<String, dynamic>> messages, 
+    List<Map<String, dynamic>> messages,
     List<Map<String, dynamic>> tools, {
     double temperature = 0.7,
-    int maxTokens = 800,
+    int maxTokens = 1500,
   }) async {
     // For testing specific providers, use constructor parameters instead of env vars
 
