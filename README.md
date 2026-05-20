@@ -49,7 +49,7 @@ void main() async {
 
 You need API keys from one or more providers:
 
-- **Novita**: Get your key from [novita.ai](https://novita.ai) (set as NOVITA_AUTH_TOKEN)
+- **Novita**: Get your key from [novita.ai](https://novita.ai) (set as NOVITA_API_KEY)
 - **Groq**: Get your key from [console.groq.com](https://console.groq.com)
 - **Gemini**: Get your key from [Google AI Studio](https://makersuite.google.com/app/apikey)
 

@@ -2,10 +2,10 @@ import 'dart:io';
 import './lib/novita_client.dart';
 
 void main() async {
-  final apiKey = Platform.environment['NOVITA_AUTH_TOKEN'];
+  final apiKey = Platform.environment['NOVITA_API_KEY'];
 
   if (apiKey == null || apiKey.isEmpty) {
-    print('Error: NOVITA_AUTH_TOKEN environment variable not set');
+    print('Error: NOVITA_API_KEY environment variable not set');
     return;
   }
 

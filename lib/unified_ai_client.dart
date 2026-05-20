@@ -1,5 +1,5 @@
 /// Unified AI Client with Groq Primary + Gemini Fallback
-/// 
+///
 /// This client attempts to use Groq first, and automatically falls back
 /// to Gemini when Groq fails or is unavailable.
 
@@ -15,7 +15,7 @@ class UnifiedAIClient {
   final NovitaClient? novitaClient;
   final bool preferGroq;
   final bool preferNovita;
-  
+
   UnifiedAIClient({
     this.groqClient,
     this.geminiClient,
@@ -24,7 +24,8 @@ class UnifiedAIClient {
     this.preferNovita = false,
   }) {
     if (groqClient == null && geminiClient == null && novitaClient == null) {
-      throw ArgumentError('At least one client (Groq, Gemini, or Novita) must be provided');
+      throw ArgumentError(
+          'At least one client (Groq, Gemini, or Novita) must be provided');
     }
   }
 
@@ -33,34 +34,34 @@ class UnifiedAIClient {
   static UnifiedAIClient? fromEnvironment() {
     final groqKey = Platform.environment['GROQ_API_KEY'];
     final geminiKey = Platform.environment['GEMINI_API_KEY'];
-    final novitaKey = Platform.environment['NOVITA_AUTH_TOKEN'];
-    
+    final novitaKey = Platform.environment['NOVITA_API_KEY'];
+
     GroqClient? groq;
     GeminiClient? gemini;
     NovitaClient? novita;
-    
+
     if (groqKey != null && groqKey.isNotEmpty) {
       groq = GroqClientFactory.withDefaults(groqKey);
     }
-    
+
     if (geminiKey != null && geminiKey.isNotEmpty) {
       gemini = GeminiClient(geminiKey);
     }
-    
+
     if (novitaKey != null && novitaKey.isNotEmpty) {
       novita = NovitaClientFactory.withDefaults(novitaKey);
     }
-    
+
     if (groq != null || gemini != null || novita != null) {
       return UnifiedAIClient(
-        groqClient: groq, 
+        groqClient: groq,
         geminiClient: gemini,
         novitaClient: novita,
         preferGroq: true,
         preferNovita: novita != null && (groq == null || gemini == null),
       );
     }
-    
+
     return null;
   }
 
@@ -75,29 +76,29 @@ class UnifiedAIClient {
     GroqClient? groq;
     GeminiClient? gemini;
     NovitaClient? novita;
-    
+
     if (groqApiKey != null) {
-      groq = groqModels != null 
+      groq = groqModels != null
           ? GroqClient(groqApiKey, groqModels)
           : GroqClientFactory.withDefaults(groqApiKey);
     }
-    
+
     if (geminiApiKey != null) {
       gemini = GeminiClient(geminiApiKey);
     }
-    
+
     if (novitaApiKey != null) {
-      novita = novitaModels != null 
+      novita = novitaModels != null
           ? NovitaClient(novitaApiKey, novitaModels)
           : NovitaClientFactory.withDefaults(novitaApiKey);
     }
-    
+
     // Determine preferences - prioritize Novita if provided, then Groq, then Gemini
     final preferNovita = novita != null;
     final preferGroq = !preferNovita && groq != null;
-    
+
     return UnifiedAIClient(
-      groqClient: groq, 
+      groqClient: groq,
       geminiClient: gemini,
       novitaClient: novita,
       preferGroq: preferGroq,
@@ -125,7 +126,7 @@ class UnifiedAIClient {
           tools: tools,
           toolChoice: toolChoice,
         );
-        
+
         if (result != null) {
           return result;
         }
@@ -133,7 +134,7 @@ class UnifiedAIClient {
         // Fall back to Groq
       }
     }
-    
+
     // Try Groq next if available and preferred
     if (preferGroq && groqClient != null) {
       try {
@@ -145,7 +146,7 @@ class UnifiedAIClient {
           tools: tools,
           toolChoice: toolChoice,
         );
-        
+
         if (result != null) {
           return result;
         }
@@ -153,7 +154,7 @@ class UnifiedAIClient {
         // Fall back to Gemini
       }
     }
-    
+
     // Fallback to Gemini
     if (geminiClient != null) {
       try {
@@ -163,7 +164,7 @@ class UnifiedAIClient {
           temperature: temperature,
           maxTokens: maxTokens,
         );
-        
+
         if (result != null) {
           return result;
         }
@@ -171,7 +172,7 @@ class UnifiedAIClient {
         // Silent error handling
       }
     }
-    
+
     // If Novita wasn't preferred, try it as last resort
     if (!preferNovita && novitaClient != null) {
       try {
@@ -183,7 +184,7 @@ class UnifiedAIClient {
           tools: tools,
           toolChoice: toolChoice,
         );
-        
+
         if (result != null) {
           return result;
         }
@@ -191,7 +192,7 @@ class UnifiedAIClient {
         // Silent error handling
       }
     }
-    
+
     // If Groq wasn't preferred, try it as last resort
     if (!preferGroq && groqClient != null) {
       try {
@@ -203,7 +204,7 @@ class UnifiedAIClient {
           tools: tools,
           toolChoice: toolChoice,
         );
-        
+
         if (result != null) {
           return result;
         }
@@ -211,7 +212,7 @@ class UnifiedAIClient {
         // Silent error handling
       }
     }
-    
+
     return null;
   }
 
@@ -231,7 +232,7 @@ class UnifiedAIClient {
           temperature: temperature,
           maxTokens: maxTokens,
         );
-        
+
         if (result != null) {
           return result;
         }
@@ -243,9 +244,9 @@ class UnifiedAIClient {
     // Fallback to Gemini with JSON parsing
     if (geminiClient != null) {
       try {
-        final jsonSystemPrompt = (systemPrompt ?? '') + 
+        final jsonSystemPrompt = (systemPrompt ?? '') +
             '\n\nIMPORTANT: Always respond with valid JSON only. Do not include markdown formatting or explanations.';
-        
+
         final completion = await geminiClient!.generateCompletion(
           prompt,
           systemPrompt: jsonSystemPrompt,
@@ -263,7 +264,7 @@ class UnifiedAIClient {
             if (jsonStr.endsWith('```')) {
               jsonStr = jsonStr.substring(0, jsonStr.length - 3);
             }
-            
+
             final result = jsonDecode(jsonStr) as Map<String, dynamic>;
             return result;
           } catch (e) {
@@ -296,7 +297,7 @@ class UnifiedAIClient {
           temperature: temperature,
           maxTokens: maxTokens,
         );
-        
+
         if (result != null) {
           return result;
         }
@@ -304,7 +305,7 @@ class UnifiedAIClient {
         // Fall back to Groq
       }
     }
-    
+
     // Try Groq next if available and preferred
     if (preferGroq && groqClient != null) {
       try {
@@ -315,7 +316,7 @@ class UnifiedAIClient {
           temperature: temperature,
           maxTokens: maxTokens,
         );
-        
+
         if (result != null) {
           return result;
         }
@@ -323,7 +324,7 @@ class UnifiedAIClient {
         // Fall back to Gemini
       }
     }
-    
+
     // Fallback to Gemini (convert history to single prompt)
     if (geminiClient != null) {
       try {
@@ -332,20 +333,20 @@ class UnifiedAIClient {
         if (systemPrompt != null) {
           historyPrompt.writeln('System: $systemPrompt\n');
         }
-        
+
         for (final entry in conversationHistory) {
           final role = entry['role'] == 'assistant' ? 'Assistant' : 'User';
           historyPrompt.writeln('$role: ${entry['content']}\n');
         }
-        
+
         historyPrompt.writeln('User: $prompt');
-        
+
         final result = await geminiClient!.generateCompletion(
           historyPrompt.toString(),
           temperature: temperature,
           maxTokens: maxTokens,
         );
-        
+
         if (result != null) {
           return result;
         }
@@ -353,7 +354,7 @@ class UnifiedAIClient {
         // Silent error handling
       }
     }
-    
+
     // If Novita wasn't preferred, try it as last resort
     if (!preferNovita && novitaClient != null) {
       try {
@@ -364,7 +365,7 @@ class UnifiedAIClient {
           temperature: temperature,
           maxTokens: maxTokens,
         );
-        
+
         if (result != null) {
           return result;
         }
@@ -372,7 +373,7 @@ class UnifiedAIClient {
         // Silent error handling
       }
     }
-    
+
     // If Groq wasn't preferred, try it as last resort
     if (!preferGroq && groqClient != null) {
       try {
@@ -383,7 +384,7 @@ class UnifiedAIClient {
           temperature: temperature,
           maxTokens: maxTokens,
         );
-        
+
         if (result != null) {
           return result;
         }
@@ -391,7 +392,7 @@ class UnifiedAIClient {
         // Silent error handling
       }
     }
-    
+
     return null;
   }
 
@@ -408,7 +409,8 @@ class UnifiedAIClient {
     // Try Novita first if available and preferred
     if (preferNovita && novitaClient != null) {
       try {
-        final result = await _tryNovitaWithTools(messages, tools, temperature, maxTokens);
+        final result =
+            await _tryNovitaWithTools(messages, tools, temperature, maxTokens);
         if (result['success'] == true) {
           return result;
         }
@@ -416,11 +418,12 @@ class UnifiedAIClient {
         // Fall back to Groq
       }
     }
-    
+
     // Try Groq next if available and preferred
     if (preferGroq && groqClient != null) {
       try {
-        final result = await _tryGroqWithTools(messages, tools, temperature, maxTokens);
+        final result =
+            await _tryGroqWithTools(messages, tools, temperature, maxTokens);
         if (result['success'] == true) {
           return result;
         }
@@ -428,16 +431,17 @@ class UnifiedAIClient {
         // Fall back to Gemini
       }
     }
-    
+
     // Fallback to Gemini
     if (geminiClient != null) {
       return await _tryGeminiWithTools(messages, tools, temperature, maxTokens);
     }
-    
+
     // If Novita wasn't preferred, try it as last resort
     if (!preferNovita && novitaClient != null) {
       try {
-        final result = await _tryNovitaWithTools(messages, tools, temperature, maxTokens);
+        final result =
+            await _tryNovitaWithTools(messages, tools, temperature, maxTokens);
         if (result['success'] == true) {
           return result;
         }
@@ -445,11 +449,12 @@ class UnifiedAIClient {
         // Silent error handling
       }
     }
-    
+
     // If Groq wasn't preferred, try it as last resort
     if (!preferGroq && groqClient != null) {
       try {
-        final result = await _tryGroqWithTools(messages, tools, temperature, maxTokens);
+        final result =
+            await _tryGroqWithTools(messages, tools, temperature, maxTokens);
         if (result['success'] == true) {
           return result;
         }
@@ -457,8 +462,13 @@ class UnifiedAIClient {
         // Silent error handling
       }
     }
-    
-    return {'needsTools': false, 'response': '', 'success': false, 'error': 'All LLM providers failed'};
+
+    return {
+      'needsTools': false,
+      'response': '',
+      'success': false,
+      'error': 'All LLM providers failed'
+    };
   }
 
   /// Try Novita with tools (internal method)
@@ -493,7 +503,10 @@ class UnifiedAIClient {
         final data = jsonDecode(response.body);
         return _processToolResponse(data, success: true);
       } else {
-        return {'success': false, 'error': 'Novita API error: ${response.statusCode}'};
+        return {
+          'success': false,
+          'error': 'Novita API error: ${response.statusCode}'
+        };
       }
     } catch (e) {
       return {'success': false, 'error': 'Novita exception: $e'};
@@ -532,7 +545,10 @@ class UnifiedAIClient {
         final data = jsonDecode(response.body);
         return _processToolResponse(data, success: true);
       } else {
-        return {'success': false, 'error': 'Groq API error: ${response.statusCode}'};
+        return {
+          'success': false,
+          'error': 'Groq API error: ${response.statusCode}'
+        };
       }
     } catch (e) {
       return {'success': false, 'error': 'Groq exception: $e'};
@@ -547,12 +563,17 @@ class UnifiedAIClient {
     int maxTokens,
   ) async {
     if (geminiClient == null) {
-      return {'needsTools': false, 'response': '', 'success': false, 'error': 'Gemini client not available'};
+      return {
+        'needsTools': false,
+        'response': '',
+        'success': false,
+        'error': 'Gemini client not available'
+      };
     }
 
     try {
       final geminiResponse = await geminiClient!.generateCompletionWithTools(
-        messages, 
+        messages,
         tools,
         temperature: temperature,
         maxTokens: maxTokens,
@@ -561,22 +582,38 @@ class UnifiedAIClient {
       if (geminiResponse != null) {
         return _processToolResponse(geminiResponse, success: true);
       } else {
-        return {'needsTools': false, 'response': '', 'success': false, 'error': 'Gemini returned null'};
+        return {
+          'needsTools': false,
+          'response': '',
+          'success': false,
+          'error': 'Gemini returned null'
+        };
       }
     } catch (e) {
-      return {'needsTools': false, 'response': '', 'success': false, 'error': 'Gemini exception: $e'};
+      return {
+        'needsTools': false,
+        'response': '',
+        'success': false,
+        'error': 'Gemini exception: $e'
+      };
     }
   }
 
   /// Process tool response into the expected format
-  Map<String, dynamic> _processToolResponse(Map<String, dynamic> data, {required bool success}) {
+  Map<String, dynamic> _processToolResponse(Map<String, dynamic> data,
+      {required bool success}) {
     if (!success) {
       return {'needsTools': false, 'response': '', 'success': false};
     }
 
     final choices = data['choices'] as List?;
     if (choices == null || choices.isEmpty) {
-      return {'needsTools': false, 'response': '', 'success': false, 'error': 'No choices in response'};
+      return {
+        'needsTools': false,
+        'response': '',
+        'success': false,
+        'error': 'No choices in response'
+      };
     }
 
     final msg = choices[0]['message'];
@@ -641,9 +678,10 @@ class UnifiedAIClient {
 class AllAIServicesFailed implements Exception {
   final String message;
   final List<String> errors;
-  
+
   AllAIServicesFailed(this.message, this.errors);
-  
+
   @override
-  String toString() => 'AllAIServicesFailed: $message\nErrors: ${errors.join(", ")}';
+  String toString() =>
+      'AllAIServicesFailed: $message\nErrors: ${errors.join(", ")}';
 }

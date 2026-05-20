@@ -9,7 +9,7 @@ import 'package:shared_ecosystem/lib/novita_client.dart';
 
 void main() async {
   // Create Novita client with API key from environment
-  final apiKey = Platform.environment['NOVITA_AUTH_TOKEN'];
+  final apiKey = Platform.environment['NOVITA_API_KEY'];
   final client = NovitaClientFactory.withDefaults(apiKey!);
   
   try {
@@ -44,7 +44,7 @@ import 'package:shared_ecosystem/lib/unified_ai_client.dart';
 void main() async {
   // Create unified client preferring Novita
   final client = UnifiedAIClient.create(
-    novitaApiKey: Platform.environment['NOVITA_AUTH_TOKEN'],
+    novitaApiKey: Platform.environment['NOVITA_API_KEY'],
     groqApiKey: Platform.environment['GROQ_API_KEY'], 
     geminiApiKey: Platform.environment['GEMINI_API_KEY'],
     // Optional: specify custom models for each provider
