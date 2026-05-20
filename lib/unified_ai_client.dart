@@ -7,19 +7,24 @@ import 'dart:convert';
 import 'dart:io';
 import 'groq_client.dart';
 import 'gemini_client.dart';
+import 'novita_client.dart';
 
 class UnifiedAIClient {
   final GroqClient? groqClient;
   final GeminiClient? geminiClient;
+  final NovitaClient? novitaClient;
   final bool preferGroq;
+  final bool preferNovita;
   
   UnifiedAIClient({
     this.groqClient,
     this.geminiClient,
+    this.novitaClient,
     this.preferGroq = true,
+    this.preferNovita = false,
   }) {
-    if (groqClient == null && geminiClient == null) {
-      throw ArgumentError('At least one client (Groq or Gemini) must be provided');
+    if (groqClient == null && geminiClient == null && novitaClient == null) {
+      throw ArgumentError('At least one client (Groq, Gemini, or Novita) must be provided');
     }
   }
 
@@ -28,9 +33,11 @@ class UnifiedAIClient {
   static UnifiedAIClient? fromEnvironment() {
     final groqKey = Platform.environment['GROQ_API_KEY'];
     final geminiKey = Platform.environment['GEMINI_API_KEY'];
+    final novitaKey = Platform.environment['NOVITA_AUTH_TOKEN'];
     
     GroqClient? groq;
     GeminiClient? gemini;
+    NovitaClient? novita;
     
     if (groqKey != null && groqKey.isNotEmpty) {
       groq = GroqClientFactory.withDefaults(groqKey);
@@ -40,8 +47,18 @@ class UnifiedAIClient {
       gemini = GeminiClient(geminiKey);
     }
     
-    if (groq != null || gemini != null) {
-      return UnifiedAIClient(groqClient: groq, geminiClient: gemini);
+    if (novitaKey != null && novitaKey.isNotEmpty) {
+      novita = NovitaClientFactory.withDefaults(novitaKey);
+    }
+    
+    if (groq != null || gemini != null || novita != null) {
+      return UnifiedAIClient(
+        groqClient: groq, 
+        geminiClient: gemini,
+        novitaClient: novita,
+        preferGroq: true,
+        preferNovita: novita != null && (groq == null || gemini == null),
+      );
     }
     
     return null;
@@ -51,10 +68,13 @@ class UnifiedAIClient {
   static UnifiedAIClient create({
     String? groqApiKey,
     String? geminiApiKey,
+    String? novitaApiKey,
     List<String>? groqModels,
+    List<String>? novitaModels,
   }) {
     GroqClient? groq;
     GeminiClient? gemini;
+    NovitaClient? novita;
     
     if (groqApiKey != null) {
       groq = groqModels != null 
@@ -66,7 +86,23 @@ class UnifiedAIClient {
       gemini = GeminiClient(geminiApiKey);
     }
     
-    return UnifiedAIClient(groqClient: groq, geminiClient: gemini);
+    if (novitaApiKey != null) {
+      novita = novitaModels != null 
+          ? NovitaClient(novitaApiKey, novitaModels)
+          : NovitaClientFactory.withDefaults(novitaApiKey);
+    }
+    
+    // Determine preferences - prioritize Novita if provided, then Groq, then Gemini
+    final preferNovita = novita != null;
+    final preferGroq = !preferNovita && groq != null;
+    
+    return UnifiedAIClient(
+      groqClient: groq, 
+      geminiClient: gemini,
+      novitaClient: novita,
+      preferGroq: preferGroq,
+      preferNovita: preferNovita,
+    );
   }
 
   /// Generate completion with automatic fallback
@@ -78,7 +114,27 @@ class UnifiedAIClient {
     List<Map<String, dynamic>>? tools,
     String? toolChoice,
   }) async {
-    // Try Groq first if available and preferred
+    // Try Novita first if available and preferred
+    if (preferNovita && novitaClient != null) {
+      try {
+        final result = await novitaClient!.generateCompletion(
+          prompt,
+          systemPrompt: systemPrompt,
+          temperature: temperature,
+          maxTokens: maxTokens,
+          tools: tools,
+          toolChoice: toolChoice,
+        );
+        
+        if (result != null) {
+          return result;
+        }
+      } catch (e) {
+        // Fall back to Groq
+      }
+    }
+    
+    // Try Groq next if available and preferred
     if (preferGroq && groqClient != null) {
       try {
         final result = await groqClient!.generateCompletion(
@@ -97,7 +153,7 @@ class UnifiedAIClient {
         // Fall back to Gemini
       }
     }
-
+    
     // Fallback to Gemini
     if (geminiClient != null) {
       try {
@@ -115,8 +171,28 @@ class UnifiedAIClient {
         // Silent error handling
       }
     }
-
-    // If Groq wasn't preferred or available, try it as last resort
+    
+    // If Novita wasn't preferred, try it as last resort
+    if (!preferNovita && novitaClient != null) {
+      try {
+        final result = await novitaClient!.generateCompletion(
+          prompt,
+          systemPrompt: systemPrompt,
+          temperature: temperature,
+          maxTokens: maxTokens,
+          tools: tools,
+          toolChoice: toolChoice,
+        );
+        
+        if (result != null) {
+          return result;
+        }
+      } catch (e) {
+        // Silent error handling
+      }
+    }
+    
+    // If Groq wasn't preferred, try it as last resort
     if (!preferGroq && groqClient != null) {
       try {
         final result = await groqClient!.generateCompletion(
@@ -135,7 +211,7 @@ class UnifiedAIClient {
         // Silent error handling
       }
     }
-
+    
     return null;
   }
 
@@ -210,7 +286,26 @@ class UnifiedAIClient {
     double temperature = 0.7,
     int maxTokens = 1500,
   }) async {
-    // Try Groq first if available and preferred
+    // Try Novita first if available and preferred
+    if (preferNovita && novitaClient != null) {
+      try {
+        final result = await novitaClient!.generateWithHistory(
+          prompt,
+          conversationHistory,
+          systemPrompt: systemPrompt,
+          temperature: temperature,
+          maxTokens: maxTokens,
+        );
+        
+        if (result != null) {
+          return result;
+        }
+      } catch (e) {
+        // Fall back to Groq
+      }
+    }
+    
+    // Try Groq next if available and preferred
     if (preferGroq && groqClient != null) {
       try {
         final result = await groqClient!.generateWithHistory(
@@ -228,7 +323,7 @@ class UnifiedAIClient {
         // Fall back to Gemini
       }
     }
-
+    
     // Fallback to Gemini (convert history to single prompt)
     if (geminiClient != null) {
       try {
@@ -258,7 +353,45 @@ class UnifiedAIClient {
         // Silent error handling
       }
     }
-
+    
+    // If Novita wasn't preferred, try it as last resort
+    if (!preferNovita && novitaClient != null) {
+      try {
+        final result = await novitaClient!.generateWithHistory(
+          prompt,
+          conversationHistory,
+          systemPrompt: systemPrompt,
+          temperature: temperature,
+          maxTokens: maxTokens,
+        );
+        
+        if (result != null) {
+          return result;
+        }
+      } catch (e) {
+        // Silent error handling
+      }
+    }
+    
+    // If Groq wasn't preferred, try it as last resort
+    if (!preferGroq && groqClient != null) {
+      try {
+        final result = await groqClient!.generateWithHistory(
+          prompt,
+          conversationHistory,
+          systemPrompt: systemPrompt,
+          temperature: temperature,
+          maxTokens: maxTokens,
+        );
+        
+        if (result != null) {
+          return result;
+        }
+      } catch (e) {
+        // Silent error handling
+      }
+    }
+    
     return null;
   }
 
@@ -272,7 +405,19 @@ class UnifiedAIClient {
   }) async {
     // For testing specific providers, use constructor parameters instead of env vars
 
-    // Try Groq first if available and preferred
+    // Try Novita first if available and preferred
+    if (preferNovita && novitaClient != null) {
+      try {
+        final result = await _tryNovitaWithTools(messages, tools, temperature, maxTokens);
+        if (result['success'] == true) {
+          return result;
+        }
+      } catch (e) {
+        // Fall back to Groq
+      }
+    }
+    
+    // Try Groq next if available and preferred
     if (preferGroq && groqClient != null) {
       try {
         final result = await _tryGroqWithTools(messages, tools, temperature, maxTokens);
@@ -283,12 +428,24 @@ class UnifiedAIClient {
         // Fall back to Gemini
       }
     }
-
+    
     // Fallback to Gemini
     if (geminiClient != null) {
       return await _tryGeminiWithTools(messages, tools, temperature, maxTokens);
     }
-
+    
+    // If Novita wasn't preferred, try it as last resort
+    if (!preferNovita && novitaClient != null) {
+      try {
+        final result = await _tryNovitaWithTools(messages, tools, temperature, maxTokens);
+        if (result['success'] == true) {
+          return result;
+        }
+      } catch (e) {
+        // Silent error handling
+      }
+    }
+    
     // If Groq wasn't preferred, try it as last resort
     if (!preferGroq && groqClient != null) {
       try {
@@ -300,8 +457,47 @@ class UnifiedAIClient {
         // Silent error handling
       }
     }
-
+    
     return {'needsTools': false, 'response': '', 'success': false, 'error': 'All LLM providers failed'};
+  }
+
+  /// Try Novita with tools (internal method)
+  Future<Map<String, dynamic>> _tryNovitaWithTools(
+    List<Map<String, dynamic>> messages,
+    List<Map<String, dynamic>> tools,
+    double temperature,
+    int maxTokens,
+  ) async {
+    if (novitaClient == null) {
+      return {'success': false, 'error': 'Novita client not available'};
+    }
+
+    try {
+      final response = await novitaClient!.httpClient.post(
+        Uri.parse('https://api.novita.ai/openai/v1/chat/completions'),
+        headers: {
+          'Authorization': 'Bearer ${novitaClient!.apiKey}',
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
+          'model': novitaClient!.currentModel,
+          'messages': messages,
+          'tools': tools,
+          'tool_choice': 'auto',
+          'temperature': temperature,
+          'max_tokens': maxTokens,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return _processToolResponse(data, success: true);
+      } else {
+        return {'success': false, 'error': 'Novita API error: ${response.statusCode}'};
+      }
+    } catch (e) {
+      return {'success': false, 'error': 'Novita exception: $e'};
+    }
   }
 
   /// Try Groq with tools (internal method)
@@ -414,14 +610,17 @@ class UnifiedAIClient {
     };
   }
 
-  /// Get current status of both clients
+  /// Get current status of all clients
   Map<String, dynamic> getStatus() {
     return {
       'groq_available': groqClient != null,
       'gemini_available': geminiClient != null,
+      'novita_available': novitaClient != null,
       'prefer_groq': preferGroq,
+      'prefer_novita': preferNovita,
       'groq_current_model': groqClient?.currentModel,
       'gemini_current_model': geminiClient?.currentModel,
+      'novita_current_model': novitaClient?.currentModel,
     };
   }
 
@@ -434,6 +633,7 @@ class UnifiedAIClient {
   void dispose() {
     groqClient?.dispose();
     geminiClient?.dispose();
+    novitaClient?.dispose();
   }
 }
 

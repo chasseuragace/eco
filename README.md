@@ -5,7 +5,7 @@ A unified AI client library for Dart that provides seamless access to multiple A
 ## Features
 
 - **Unified Interface**: Single API for multiple AI providers
-- **Automatic Fallback**: Groq primary with Gemini fallback
+- **Automatic Fallback**: Novita primary with Groq and Gemini fallback
 - **Load Balancing**: Round-robin model rotation
 - **Tool Support**: Function calling capabilities
 - **Conversation History**: Multi-turn conversation support
@@ -28,6 +28,7 @@ import 'package:shared_ecosystem/shared_ecosystem.dart';
 void main() async {
   // Create client with your API keys
   final client = UnifiedAIClient.create(
+    novitaApiKey: 'your-novita-api-key',
     groqApiKey: 'your-groq-api-key',
     geminiApiKey: 'your-gemini-api-key',
   );
@@ -46,8 +47,9 @@ void main() async {
 
 ## API Keys
 
-You need API keys from one or both providers:
+You need API keys from one or more providers:
 
+- **Novita**: Get your key from [novita.ai](https://novita.ai) (set as NOVITA_AUTH_TOKEN)
 - **Groq**: Get your key from [console.groq.com](https://console.groq.com)
 - **Gemini**: Get your key from [Google AI Studio](https://makersuite.google.com/app/apikey)
 
@@ -57,6 +59,7 @@ You need API keys from one or both providers:
 
 ```dart
 final client = UnifiedAIClient.create(
+  novitaApiKey: 'your-novita-key',
   groqApiKey: 'your-groq-key',
   geminiApiKey: 'your-gemini-key',
 );
@@ -122,7 +125,10 @@ if (result['needsTools'] == true) {
 ### Single Provider
 
 ```dart
-// Groq only
+// Novita only
+final novitaClient = UnifiedAIClient.create(novitaApiKey: 'your-key');
+
+// Groq only  
 final groqClient = UnifiedAIClient.create(groqApiKey: 'your-key');
 
 // Gemini only  
@@ -133,7 +139,9 @@ final geminiClient = UnifiedAIClient.create(geminiApiKey: 'your-key');
 
 ```dart
 final client = UnifiedAIClient.create(
-  groqApiKey: 'your-key',
+  novitaApiKey: 'your-novita-key',
+  novitaModels: ['deepseek/deepseek-v4-pro', 'qwen/qwen3.5-27b'],
+  groqApiKey: 'your-groq-key',
   groqModels: ['llama-3.3-70b-versatile', 'mixtral-8x7b-32768'],
 );
 ```
@@ -141,6 +149,14 @@ final client = UnifiedAIClient.create(
 ### Preference Control
 
 ```dart
+// Prefer Novita over Groq and Gemini
+final client = UnifiedAIClient(
+  novitaClient: NovitaClient('novita-key', NovitaClient.defaultModels),
+  groqClient: GroqClient('groq-key', GroqClient.defaultModels),
+  geminiClient: GeminiClient('gemini-key'),
+  preferNovita: true, // Use Novita first
+);
+
 // Prefer Gemini over Groq
 final client = UnifiedAIClient(
   groqClient: GroqClient('groq-key', GroqClient.defaultModels),
