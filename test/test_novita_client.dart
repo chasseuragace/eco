@@ -1,5 +1,5 @@
 import 'dart:io';
-import './lib/novita_client.dart';
+import '../lib/novita_client.dart';
 
 void main() async {
   final apiKey = Platform.environment['NOVITA_API_KEY'];
